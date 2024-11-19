@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<meta charset="UTF-8">
+<th:block layout:fragment="css"></th:block>
+<th:block layout:fragment="script"></th:block>
+<body>
+<div layout:fragment="content" class="content" th:object="${article}">
+  <div th:unless="${msg == null}" class="alert alert-warning alert-dismissible fade show" role="alert">
+    <strong th:text="${msg}"></strong>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  <table class="table m-2">
+    <thead>
+    <tr>
+      <th scope="col">Id</th>
+      <th scope="col">Title</th>
+      <th scope="col">Content</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr>
+      <th scope="row" th:text="*{id}"></th>
+      <td th:text="*{title}"></td>
+      <td th:text="*{content}"></td>
+    </tr>
+    </tbody>
+  </table>
+  <a th:href="@{/articles/{id}/update(id=*{id})}" class="btn btn-primary">Edit</a>
+  <a th:href="@{/articles/{id}/delete(id=*{id})}" class="btn btn-danger">Delete</a>
+  <a href="/articles">Go to Article List</a>
+  <br><br>
+  <div th:unless="${commentMsg == null}" class="alert alert-warning alert-dismissible fade show" role="alert">
+    <strong th:text="${commentMsg}"></strong>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+  </div>
+  <div class="card m-2" th:each="comment : ${article.commentList}" th:object="${comment}">
+    <div class="card-header">
+      <input type="hidden" th:value="${article.id}" id="article_id">
+      <span th:text="*{nickname}"></span>
+      <a class="btn btn-sm btn-outline-primary" th:href="@{/articles/{article_id}/comments/{id}/update(article_id=${article.id}, id=*{id})}">수정</a>
+      <a class="btn btn-sm btn-outline-primary" id="comment-delete-btn">삭제</a>
+      <input type="hidden" th:value="*{id}">
+    </div>
+    <div class="card-body">
+      <p class="card-text" th:text="*{body}"></p>
+    </div>
+  </div>
+
+  <form th:action="@{/articles/{article_id}/comments/create(article_id=*{id})}" method="post">
+    <!-- 닉네임 입력-->
+    <div class="m-2">
+      <label class="form-label">닉네임</label>
+      <input type="text" class="form-control" id="new-comment-nickname" name="nickname">
+    </div>
+    <!-- 댓글 본문 입력-->
+    <div class="m-2">
+      <label class="form-label">댓글 내용</label>
+      <textarea type="text" class="form-control" rows="3" id="new-comment-body" name="body"></textarea>
+    </div>
+    <!-- 전송버튼-->
+    <button type="button" class="btn btn-primary" id="comment-create-btn">댓글 작성</button>
+  </form>
+  <script th:inline="javascript">
+    $(document).ready(function(){
+      $(document).on("click", "#comment-delete-btn", function(){
+        let commentId = $(this).next().val();
+        let articleId = $("#article_id").val();
+        let sendUrl = "/api/comments/"+ commentId;
+<!--        location.href = '/articles/'+ articleId +'/comments/'+ commentId +'/delete';-->
+        $.ajax({
+          url : sendUrl,
+          type : 'delete',
+          dataType : 'json',
+          header : {
+            "Content-Type" : "application/json"
+          },
+          success : function(data, status, xhr){
+            alert(data.message);
+            location.href = `/articles/[[*{id}]]`;
+          },
+          error : function(xhr, status, error){
+          },
+        })
+      });
+
+      $("#comment-create-btn").on("click", function(){
+        event.preventDefault();
+        if($("#new-comment-nickname").val() == ""){
+          alert('닉네임을 입력해주세요.')
+          $("#new-comment-nickname").focus();
+          return false;
+        }
+        if($("#new-comment-body").val() == ""){
+          alert('내용을 입력해주세요.')
+          $("#new-comment-body").focus();
+          return false;
+        }
+        <!--        $("form").submit();-->
+        let sendUrl = `/api/articles/[[*{id}]]/comments`;
+        let newComment = {
+          'nickname' : $("#new-comment-nickname").val(),
+          'body' : $("#new-comment-body").val()
+        };
+        $.ajax({
+          url : sendUrl,
+          type : "post",
+          dataType : 'json',
+          data : JSON.stringify(newComment),
+          headers : {
+            "Content-Type" : "application/json"
+          },
+          success : function(data, status, xhr){
+            alert(data.message);
+            location.href = `/articles/[[*{id}]]`;
+          },
+          error : function(xhr, status, error){
+          },
+        })
+      });
+    });
+  </script>
+</div>
+</body>
+</html>

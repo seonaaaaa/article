@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/layout}">
+<meta charset="UTF-8">
+<th:block layout:fragment="css"></th:block>
+<th:block layout:fragment="script"></th:block>
+<body>
+<div layout:fragment="content" class="content">
+    <form class="container" th:object="${comment}" method="post" th:action="@{/articles/{article_id}/comments/update(article_id=${article_id})}">
+        <input type="hidden" th:field="*{id}">
+        <div class="mb3">
+            <label class="form-label"> 닉네임</label>
+            <input type="text" class="form-control" th:field="*{nickname}" id="update-comment-nickname" disabled>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">내용</label>
+            <textarea class="form-control" row="3" th:field="*{body}" id="update-comment-body" ></textarea>
+        </div>
+        <button type="button" class="btn btn-primary" id="comment-update-btn">댓글수정</button>
+        <a href="/articles">Go to Article List</a>
+    </form>
+    <script th:inline="javascript">
+    $(document).ready(function(){
+        $("#comment-update-btn").on("click", function(){
+            event.preventDefault();
+            if($("#update-comment-body").val() == ""){
+            alert('내용을 입력해주세요.')
+            $("#update-comment-body").focus();
+            return false;
+        }
+<!--        $("form").submit();-->
+        let sendUrl = `/api/comments/[[*{id}]]`;
+        let updateComment = {
+            'body' : $("#update-comment-body").val()
+        };
+        $.ajax({
+            url : sendUrl,
+            type : 'patch',
+            dataType : 'Json',
+            data : JSON.stringify(updateComment),
+            headers : {
+                "Content-Type" : "application/json"
+            },
+            success : function(data, status, xhr){
+                alert(data.message);
+                location.href = `/articles/[[${article_id}]]`;
+            },
+            error : function(xhr, status, error){
+            },
+        })
+        });
+    });
+    </script>
+</div>
+</body>
+</html>
